@@ -1,13 +1,38 @@
 """Module for Tagger, to save and load presets."""
 import os
 import json
+import string
+import re
 
 from typing import Tuple, List, Dict
 from pathlib import Path
 from gradio.context import Context
-from modules.images import sanitize_filename_part  # pylint: disable=E0401
 
 PresetDict = Dict[str, Dict[str, any]]
+
+
+# Copied from https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/images.py#L319-L339
+invalid_filename_chars = '<>:"/\\|?*\n\r\t'
+invalid_filename_prefix = ' '
+invalid_filename_postfix = ' .'
+re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
+re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
+re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
+max_filename_part_length = 128
+NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
+
+
+def sanitize_filename_part(text, replace_spaces=True):
+    if text is None:
+        return None
+
+    if replace_spaces:
+        text = text.replace(' ', '_')
+
+    text = text.translate({ord(x): '_' for x in invalid_filename_chars})
+    text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
+    text = text.rstrip(invalid_filename_postfix)
+    return text
 
 
 class Preset:
